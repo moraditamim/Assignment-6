@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment 6 - jQuery Detective & Party in Motion</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --color-red: #ff4d4d;
+            --color-blue: #3399ff;
+            --color-green: #2ecc71;
+            --color-yellow: #f1c40f;
+            --color-purple: #9b59b6;
+            --color-black: #34495e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 { text-align: center; color: #2c3e50; }
+
+        .controls-panel {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .case-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background-color: #2980b9; }
+        .btn-clear { background-color: #e74c3c; }
+        .btn-clear:hover { background-color: #c0392b; }
+
+        #case-result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #eef9f5;
+            border-left: 5px solid #2ecc71;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .house {
+            background: #fff;
+            border: 4px solid #8e44ad;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .floor {
+            border-bottom: 3px solid #8e44ad;
+            display: flex;
+        }
+
+        .floor-title {
+            background: #8e44ad;
+            color: white;
+            padding: 5px 15px;
+            font-weight: bold;
+        }
+
+        .room {
+            flex: 1;
+            border-right: 2px dashed #bdc3c7;
+            padding: 15px;
+            min-height: 220px;
+            position: relative;
+        }
+
+        .room:last-child { border-right: none; }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+
+        .room-title { font-weight: bold; font-size: 1.2em; }
+
+        .guests-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .guest-card {
+            width: 100px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .avatar-ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 5px auto;
+            padding: 3px;
+            box-sizing: border-box;
+        }
+
+        .avatar-ring img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #f0f0f0;
+        }
+
+        .guest-name { font-weight: bold; font-size: 0.9em; margin-bottom: 2px; }
+        .guest-time { font-size: 0.75em; color: #7f8c8d; }
+        .guest-icons { margin-top: 4px; font-size: 0.8em; color: #555; }
+        
+        .aitu-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #2980b9;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            line-height: 16px;
+        }
+
+        .color-red { border: 3px solid var(--color-red); }
+        .color-blue { border: 3px solid var(--color-blue); }
+        .color-green { border: 3px solid var(--color-green); }
+        .color-yellow { border: 3px solid var(--color-yellow); }
+        .color-purple { border: 3px solid var(--color-purple); }
+        .color-black { border: 3px solid var(--color-black); }
+
+        .highlight { box-shadow: 0 0 12px 4px #f39c12 !important; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            z-index: 999;
+        }
+
+        .detail-card {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            width: 250px;
+            box-sizing: border-box;
+        }
+
+        .detail-card h3 { margin-top: 0; margin-bottom: 10px; color: #2c3e50; }
+        .detail-card p { margin: 5px 0; font-size: 0.9em; }
+
+        .move-buttons {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .btn-move { background: #27ae60; font-size: 0.8em; padding: 4px 8px; }
+    </style>
+</head>
+<body>
+    <h1>AITU Birthday Party - Selector Detective</h1>
+
+    <div class="controls-panel">
+        <div class="case-buttons">
+            <button class="btn btn-clear" id="btn-clear">Clear Spotlight</button>
+            <button class="btn" onclick="runCase(1)">Case 1</button>
+            <button class="btn" onclick="runCase(2)">Case 2</button>
+            <button class="btn" onclick="runCase(3)">Case 3</button>
+            <button class="btn" onclick="runCase(4)">Case 4</button>
+            <button class="btn" onclick="runCase(5)">Case 5</button>
+            <button class="btn" onclick="runCase(6)">Case 6</button>
+            <button class="btn" onclick="runCase(7)">Case 7</button>
+            <button class="btn" onclick="runCase(8)">Case 8</button>
+            <button class="btn" onclick="runCase(9)">Case 9</button>
+            <button class="btn" onclick="runCase(10)">Case 10</button>
+            <button class="btn" onclick="runCase(11)">Case 11</button>
+            <button class="btn" onclick="runCase(12)">Case 12</button>
+            <button class="btn" onclick="runCase(13)">Case 13</button>
+            <button class="btn" onclick="runCase(14)">Case 14</button>
+            <button class="btn" onclick="runCase(15)">Case 15</button>
+            <button class="btn" onclick="runCase(16)">Case 16</button>
+            <button class="btn" onclick="runCase(17)">Case 17</button>
+            <button class="btn" onclick="runCase(18)">Case 18</button>
+            <button class="btn" onclick="runCase(19)">Case 19</button>
+            <button class="btn" style="background-color: #8e44ad;" onclick="runCase(20)">Case 20 (Thief)</button>
+        </div>
+        <div id="case-result"></div>
+    </div>
+
+    <div class="house">
+        <div class="floor-title">FLOOR 2</div>
+        <div class="floor" data-floor="2">
+            <div class="room" data-room="balcony">
+                <div class="room-header">
+                    <span class="room-title">Balcony</span>
+                    <button class="btn btn-sort" onclick="sortRoom('balcony')">Sort by time</button>
+                </div>
+                <div class="guests-container"></div>
+            </div>
+            <div class="room" data-room="hall">
+                <div class="room-header">
+                    <span class="room-title">Hall</span>
+                    <button class="btn btn-sort" onclick="sortRoom('hall')">Sort by time</button>
+                </div>
+                <div class="guests-container"></div>
+            </div>
+        </div>
+
+        <div class="floor-title">FLOOR 1</div>
+        <div class="floor" data-floor="1">
+            <div class="room" data-room="kitchen">
+                <div class="room-header">
+                    <span class="room-title">Kitchen</span>
+                    <button class="btn btn-sort" onclick="sortRoom('kitchen')">Sort by time</button>
+                </div>
+                <div class="guests-container"></div>
+            </div>
+            <div class="room" data-room="living room">
+                <div class="room-header">
+                    <span class="room-title">Living room</span>
+                    <button class="btn btn-sort" onclick="sortRoom('living room')">Sort by time</button>
+                </div>
+                <div class="guests-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="detail-card" id="detail-card"></div>
+
+    <script>
+        const initialPartyData = [
+            {
+                room: "balcony", floor: 2,
+                guests: [
+                    { name: "Aigerim", color: "blue", time: "20:45", aitu: true, items: ["cup", "crumbs"] },
+                    { name: "Aliya", color: "yellow", time: "21:15", aitu: false, items: ["phone", "bag"] },
+                    { name: "Madina", color: "green", time: "22:10", aitu: true, items: ["phone", "bag"] },
+                    { name: "Ivan", color: "black", time: "20:10", aitu: true, items: ["bag"] }
+                ]
+            },
+            {
+                room: "hall", floor: 2,
+                guests: [
+                    { name: "Arman", color: "orange", time: "20:35", aitu: false, items: ["glasses", "cup"] },
+                    { name: "Sophia", color: "black", time: "21:20", aitu: true, items: ["phone"] },
+                    { name: "Dias", color: "blue", time: "19:45", aitu: true, items: [] },
+                    { name: "Bekzat", color: "purple", time: "20:55", aitu: true, items: ["bag", "glasses", "cup"] },
+                    { name: "Aruzhan", color: "blue", time: "21:50", aitu: true, items: ["phone"] },
+                    { name: "Saule", color: "green", time: "21:25", aitu: false, items: ["glasses"] }
+                ]
+            },
+            {
+                room: "kitchen", floor: 1,
+                guests: [
+                    { name: "Nurlan", color: "red", time: "19:40", aitu: true, items: ["bag"] },
+                    { name: "Emma", color: "black", time: "20:15", aitu: true, items: [] },
+                    { name: "Timur", color: "green", time: "21:05", aitu: true, items: ["phone", "bag"] },
+                    { name: "Sergey", color: "orange", time: "20:50", aitu: true, items: [] },
+                    { name: "Yerlan", color: "red", time: "21:40", aitu: true, items: ["glasses", "phone"] },
+                    { name: "Kamila", color: "black", time: "20:05", aitu: false, items: ["bag"] }
+                ]
+            },
+            {
+                room: "living room", floor: 1,
+                guests: [
+                    { name: "Daniel", color: "blue", time: "19:55", aitu: false, items: ["glasses"] },
+                    { name: "Zarina", color: "green", time: "21:10", aitu: false, items: ["bag", "phone"] },
+                    { name: "Natasha", color: "yellow", time: "20:30", aitu: true, items: ["bag"] },
+                    { name: "Askar", color: "black", time: "21:00", aitu: true, items: ["bag"] },
+                    { name: "Inkar", color: "purple", time: "20:20", aitu: false, items: ["bag"] }
+                ]
+            }
+        ];
+
+        let partyData = JSON.parse(JSON.stringify(initialPartyData));
+        const originalOrders = {};
+
+        function getIconsHtml(items) {
+            const iconMap = {
+                phone: '<i class="fa-solid fa-mobile-screen"></i>',
+                glasses: '<i class="fa-solid fa-glasses"></i>',
+                bag: '<i class="fa-solid fa-briefcase"></i>',
+                cup: '<i class="fa-solid fa-mug-hot"></i>',
+                crumbs: '<i class="fa-solid fa-cookie"></i>'
+            };
+            return items.map(item => iconMap[item] || '').join(' ');
+        }
+
+        function buildPage() {
+            $('.guests-container').empty();
+            partyData.forEach(r => {
+                const $container = $(`.room[data-room="${r.room}"] .guests-container`);
+                r.guests.forEach(g => {
+                    const avatarUrl = `https://api.dicebear.com/9.x/open-peeps/svg?seed=${g.name}`;
+                    const itemsStr = g.items.join(',');
+                    const colorClass = `color-${g.color === 'orange' ? 'yellow' : g.color}`;
+                    
+                    const $card = $(`
+                        <div class="guest-card" 
+                             data-name="${g.name}" 
+                             data-color="${g.color}" 
+                             data-time="${g.time}" 
+                             data-aitu="${g.aitu}" 
+                             data-items="${itemsStr}">
+                            ${g.aitu ? '<div class="aitu-badge"><i class="fa-solid fa-graduation-cap"></i></div>' : ''}
+                            <div class="avatar-ring ${colorClass}">
+                                <img src="${avatarUrl}" alt="${g.name}">
+                            </div>
+                            <div class="guest-name">${g.name}</div>
+                            <div class="guest-time">${g.time}</div>
+                            <div class="guest-icons">${getIconsHtml(g.items)}</div>
+                        </div>
+                    `);
+                    $container.append($card);
+                });
+            });
+
+            $('.room').each(function() {
+                const roomName = $(this).data('room');
+                if (!originalOrders[roomName]) {
+                    originalOrders[roomName] = $(this).find('.guest-card').toArray();
+                }
+            });
+        }
+
+        function applySpotlight($matchedElements, isRoomMatch = false) {
+            $('.guest-card').stop(true, true).css('opacity', '1').removeClass('highlight');
+            
+            if (isRoomMatch) {
+                const $targetGuests = $matchedElements.find('.guest-card');
+                $('.guest-card').not($targetGuests).fadeTo(300, 0.2);
+            } else {
+                $('.guest-card').not($matchedElements).fadeTo(300, 0.2);
+                $matchedElements.addClass('highlight').animate({ top: "-=10px" }, 150).animate({ top: "+=10px" }, 150);
+            }
+
+            let names = [];
+            if (isRoomMatch) {
+                $matchedElements.each(function() { names.push($(this).data('room')); });
+                $('#case-result').html(`<strong>Found Rooms (${names.length}):</strong> ${names.join(', ')}`).show();
+            } else {
+                $matchedElements.each(function() { names.push($(this).attr('data-name')); });
+                $('#case-result').html(`<strong>Found Guests (${names.length}):</strong> ${names.join(', ')}`).show();
+            }
+        }
+
+        $('#btn-clear').click(function() {
+            $('.guest-card').stop(true, true).fadeTo(300, 1.0).removeClass('highlight');
+            $('#case-result').hide();
+        });
+
+        function runCase(caseNum) {
+            if (caseNum !== 18 && caseNum !== 19) buildPage();
+
+            let $res;
+            switch(caseNum) {
+                case 1:
+                    $res = $('.room[data-room="hall"] .guest-card');
+                    applySpotlight($res);
+                    break;
+                case 2:
+                    $res = $('.guest-card[data-color="yellow"], .guest-card[data-color="purple"]');
+                    applySpotlight($res);
+                    break;
+                case 3:
+                    $res = $('.floor[data-floor="2"] .guest-card[data-aitu="true"]');
+                    applySpotlight($res);
+                    break;
+                case 4:
+                    $res = $('.guest-card').filter(function() {
+                        const items = $(this).attr('data-items').split(',');
+                        return items.includes('glasses') || items.includes('bag');
+                    });
+                    applySpotlight($res);
+                    break;
+                case 5:
+                    $res = $('.guest-card[data-items=""]');
+                    applySpotlight($res);
+                    break;
+                case 6:
+                    $res = $('.guest-card').filter(function() {
+                        const items = $(this).attr('data-items').split(',');
+                        return items.includes('phone') && !items.includes('bag');
+                    });
+                    applySpotlight($res);
+                    break;
+                case 7:
+                    $res = $('.guest-card').filter(function() {
+                        const t = $(this).attr('data-time');
+                        return t >= '20:30' && t <= '21:00';
+                    });
+                    applySpotlight($res);
+                    break;
+                case 8:
+                    $res = $('.guest-card[data-aitu="false"]').filter(function() {
+                        return $(this).attr('data-time') > '21:00';
+                    });
+                    applySpotlight($res);
+                    break;
+                case 9:
+                    $res = $('.guest-card[data-name="Askar"]').siblings();
+                    applySpotlight($res);
+                    break;
+                case 10:
+                    $res = $('.room .guest-card:last-child');
+                    applySpotlight($res);
+                    break;
+                case 11:
+                    $res = $('.room .guest-card:nth-child(3)');
+                    applySpotlight($res);
+                    break;
+                case 12:
+                    $res = $('.guest-card[data-name="Timur"]').nextAll();
+                    applySpotlight($res);
+                    break;
+                case 13:
+                    $res = $('.guest-card[data-color="black"]').prev();
+                    applySpotlight($res);
+                    break;
+                case 14:
+                    $res = $('.guest-card[data-name="Aruzhan"]').closest('.room');
+                    applySpotlight($res, true);
+                    break;
+                case 15:
+                    $res = $('.room').filter(function() {
+                        return $(this).find('.guest-card').length < 6;
+                    });
+                    applySpotlight($res, true);
+                    break;
+                case 16:
+                    $res = $('.room').has('.guest-card[data-items*="cup"]').not(':has(.guest-card[data-items*="glasses"])');
+                    applySpotlight($res, true);
+                    break;
+                case 17:
+                    $res = $('.room').map(function() {
+                        return $(this).find('.guest-card').toArray().sort((a,b) => $(a).data('time').localeCompare($(b).data('time')))[0];
+                    });
+                    applySpotlight($($res));
+                    break;
+                case 18:
+                    const mirasHtml = `
+                        <div class="guest-card" data-name="Miras" data-color="blue" data-time="21:20" data-aitu="true" data-items="phone" style="display:none;">
+                            <div class="aitu-badge"><i class="fa-solid fa-graduation-cap"></i></div>
+                            <div class="avatar-ring color-blue">
+                                <img src="https://api.dicebear.com/9.x/open-peeps/svg?seed=Miras" alt="Miras">
+                            </div>
+                            <div class="guest-name">Miras</div>
+                            <div class="guest-time">21:20</div>
+                            <div class="guest-icons"><i class="fa-solid fa-mobile-screen"></i></div>
+                        </div>`;
+                    $res = $(mirasHtml).insertAfter('.guest-card[data-name="Askar"]').fadeIn(600);
+                    applySpotlight($res);
+                    break;
+                case 19:
+                    $('.guest-card[data-name="Natasha"]').fadeOut(600, function() {
+                        $(this).remove();
+                    });
+                    $('#case-result').html('Natasha has left the party.').show();
+                    break;
+                case 20:
+                    $res = $('.floor[data-floor="1"] .guest-card').filter(function() {
+                        const items = $(this).attr('data-items').split(',');
+                        const t = $(this).attr('data-time');
+                        const isAfter21 = t > '21:00' && t < '21:30';
+                        const hasCrumbsNoCup = items.includes('crumbs') && !items.includes('cup');
+                        const nextToAitu = $(this).siblings('[data-aitu="true"]').length > 0;
+                        return isAfter21 && hasCrumbsNoCup && nextToAitu;
+                    });
+                    applySpotlight($res);
+                    break;
+            }
+        }
+
+        $(document).on('click', '.guest-card', function(e) {
+            e.stopPropagation();
+            const $card = $(this);
+            const offset = $card.offset();
+            const width = $card.outerWidth();
+            const height = $card.outerHeight();
+
+            const name = $card.attr('data-name');
+            const color = $card.attr('data-color');
+            const time = $card.attr('data-time');
+            const aitu = $card.attr('data-aitu') === 'true' ? 'AITU student' : 'Not AITU student';
+            const items = $card.attr('data-items') ? $card.attr('data-items').split(',').join(', ') : 'nothing';
+
+            const currentRoom = $card.closest('.room').data('room');
+            const allRooms = ['balcony', 'hall', 'kitchen', 'living room'].filter(r => r !== currentRoom);
+
+            let moveBtnsHtml = allRooms.map(r => `<button class="btn btn-move" onclick="moveGuest('${name}', '${r}')">Move to ${r}</button>`).join('');
+
+            const content = `
+                <h3>${name}</h3>
+                <p><strong>Color:</strong> ${color}</p>
+                <p><strong>Arrival:</strong> Came at ${time}</p>
+                <p><strong>Status:</strong> ${aitu}</p>
+                <p><strong>Carrying:</strong> Has ${items}</p>
+                <div class="move-buttons">${moveBtnsHtml}</div>
+            `;
+
+            $('#detail-card').html(content).stop(true, true).css({
+                top: offset.top + height/2,
+                left: offset.left + width/2,
+                width: 0, height: 0, opacity: 0, display: 'block'
+            }).animate({
+                top: offset.top - 20,
+                left: offset.left + width + 10,
+                width: '240px',
+                height: 'auto',
+                opacity: 1
+            }, 300);
+
+            $('#modal-overlay').fadeIn(200);
+        });
+
+        function closeCard() {
+            $('#detail-card').animate({ width: 0, height: 0, opacity: 0 }, 200, function() {
+                $(this).hide();
+            });
+            $('#modal-overlay').fadeOut(200);
+        }
+
+        $(document).on('keyup', function(e) { if (e.key === "Escape") closeCard(); });
+        $('#modal-overlay').on('click', closeCard);
+
+        function moveGuest(guestName, targetRoom) {
+            closeCard();
+            const $guest = $(`.guest-card[data-name="${guestName}"]`);
+            const $targetContainer = $(`.room[data-room="${targetRoom}"] .guests-container`);
+
+            const origPos = $guest.offset();
+            const $clone = $guest.clone().appendTo('body').css({
+                position: 'absolute',
+                top: origPos.top,
+                left: origPos.left,
+                zIndex: 1000
+            });
+
+            $guest.css('visibility', 'hidden');
+
+            $guest.animate({ width: 0, opacity: 0 }, 400, function() {
+                const targetPos = $targetContainer.offset();
+                $clone.animate({ top: targetPos.top, left: targetPos.left }, 500, function() {
+                    $guest.appendTo($targetContainer).css({ visibility: 'visible', width: '100px', opacity: 1 });
+                    $clone.remove();
+
+                    partyData.forEach(r => {
+                        const idx = r.guests.findIndex(g => g.name === guestName);
+                        if (idx > -1) {
+                            const [moved] = r.guests.splice(idx, 1);
+                            const tRoom = partyData.find(tr => tr.room === targetRoom);
+                            tRoom.guests.push(moved);
+                        }
+                    });
+                });
+            });
+        }
+
+        const sortStates = {};
+        function sortRoom(roomName) {
+            const $container = $(`.room[data-room="${roomName}"] .guests-container`);
+            const $cards = $container.find('.guest-card');
+
+            sortStates[roomName] = !sortStates[roomName];
+
+            let sortedCards;
+            if (sortStates[roomName]) {
+                sortedCards = $cards.toArray().sort((a, b) => $(a).data('time').localeCompare($(b).data('time')));
+            } else {
+                sortedCards = originalOrders[roomName];
+            }
+
+            $cards.stop(true, true);
+            $.each(sortedCards, function(i, el) {
+                $(el).fadeOut(150, function() {
+                    $(el).appendTo($container).fadeIn(150);
+                });
+            });
+        }
+
+        $(document).ready(function() {
+            buildPage();
+        });
+    </script>
+</body>
+</html>
